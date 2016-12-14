@@ -164,7 +164,6 @@ class AxolotlReceivelayer(AxolotlBaseLayer):
             self.toLower(retry.toProtocolTreeNode())
 
     def parseAndHandleMessageProto(self, encMessageProtocolEntity, serializedData):
-        print("got something")
         node = encMessageProtocolEntity.toProtocolTreeNode()
         m = Message()
         handled = False
@@ -180,34 +179,26 @@ class AxolotlReceivelayer(AxolotlBaseLayer):
             raise ValueError("Empty message")
 
         if m.HasField("sender_key_distribution_message"):
-            print("got sender_key....")
             handled = True
             axolotlAddress = AxolotlAddress(encMessageProtocolEntity.getParticipant(False), 0)
             self.handleSenderKeyDistributionMessage(m.sender_key_distribution_message, axolotlAddress)
 
         if m.HasField("conversation"):
-            print("got conversation")
             handled = True
             self.handleConversationMessage(node, m.conversation)
         elif m.HasField("contact_message"):
-            print("got contact_message")
             handled = True
             self.handleContactMessage(node, m.contact_message)
         elif m.HasField("url_message"):
-            print("got url_message")
-            print(m)
             handled = True
             self.handleUrlMessage(node, m.url_message)
         elif m.HasField("location_message"):
-            print("got location_message")
             handled = True
             self.handleLocationMessage(node, m.location_message)
         elif m.HasField("document_message"):
-            print("got document_message")
             handled = True
             self.handleDocumentMessage(node,m.document_message)
         elif m.HasField("image_message"):
-            print("got image_message")
             handled = True
             self.handleImageMessage(node, m.image_message)
 
@@ -229,19 +220,20 @@ class AxolotlReceivelayer(AxolotlBaseLayer):
         self.toUpper(messageNode)
 
     def handleDocumentMessage(self, originalEncNode, documentMessage):
-        print("found document message")
         messageNode=copy.deepcopy(originalEncNode)
         messageNode["type"] = "media"
         mediaNode = ProtocolTreeNode("media", {
             "type": "document",
+            "filehash":documentMessage.file_sha256,
+            "size":documentMessage.file_length,
             "url": documentMessage.url,
             "mimetype": documentMessage.mimeType,
-            "title": documentMessage.title,
-            "filehash":documentMessage.file_sha256,
-            "length":documentMessage.file_length,
-            "pages":documentMessage.page_count,
-            "media_key":documentMessage.media_key,
+            "pages":documentMessage.page_count,            
+            "caption": documentMessage.title,
+            "mediaKey":documentMessage.media_key,
             "encoding": "raw",
+            "file": "enc",
+            "ip": "0"
         }, data=documentMessage.jpeg_thumbnail)
         messageNode.addChild(mediaNode)
 
@@ -259,6 +251,7 @@ class AxolotlReceivelayer(AxolotlBaseLayer):
             "width": imageMessage.width,
             "height": imageMessage.height,
             "caption": imageMessage.caption,
+            "mediaKey":imageMessage.media_key,
             "encoding": "raw",
             "file": "enc",
             "ip": "0"
