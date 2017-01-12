@@ -8,64 +8,58 @@ class DocumentDownloadableMediaMessageProtocolEntity(DownloadableMediaMessagePro
     '''
     <message t="{{TIME_STAMP}}" from="{{CONTACT_JID}}"
         offline="{{OFFLINE}}" type="text" id="{{MESSAGE_ID}}" notify="{{NOTIFY_NAME}}">
-        <media type="{{DOWNLOADABLE_MEDIA_TYPE: (image | audio | video | document)}}"
+        <media type="{{DOWNLOADABLE_MEDIA_TYPE: (image | audio | video)}}"
             mimetype="{{MIME_TYPE}}"
             filehash="{{FILE_HASH}}"
             url="{{DOWNLOAD_URL}}"
-            ip="{{IP}}"
+            title="{{TITLE}}"
             size="{{MEDIA SIZE}}"
             file="{{FILENAME}}"
-
-
-            encoding="{{ENCODING}}"
-            pages="{{page count}}"
-
+            pages="{{PAGE_COUNT}}"
+            mediakey="{{MEDIAKEY}}"
             > {{THUMBNAIL_RAWDATA (JPEG?)}}
         </media>
     </message>
     '''
     def __init__(self,
-            mimeType, fileHash, url, ip, size, fileName,
-            encoding, pages, caption = None, mediaKey = None,
+            mimeType, fileHash, url, title, size, fileName,
+            pages, mediaKey = None,
             _id = None, _from = None, to = None, notify = None, timestamp = None,
             participant = None, preview = None, offline = None, retry = None):
 
-        super(ImageDownloadableMediaMessageProtocolEntity, self).__init__("image",
-            mimeType, fileHash, url, ip, size, fileName, mediaKey,
+        super(DocumentDownloadableMediaMessageProtocolEntity, self).__init__("document",
+            mimeType, fileHash, url, None, size, fileName, mediaKey,
             _id, _from, to, notify, timestamp, participant, preview, offline, retry)
-        self.setImageProps(encoding, pages, caption)
+        self.setImageProps(title, pages)
 
     def __str__(self):
         out  = super(DocumentDownloadableMediaMessageProtocolEntity, self).__str__()
-        out += "Encoding: %s\n" % self.encoding
-        out += "Pages: %s\n" % self.pages
-        if self.caption:
-            out += "Caption: %s\n" % self.caption
+        out += "Title: %s\n" % self.title
+        out += "Pages: %s\n" % str(self.pages)
         return out
 
-    def setDocumentProps(self, encoding, pages, caption):
-        self.encoding   = encoding
+    def setDocumentProps(self, title, pages):
         self.pages      = int(pages)
-        self.caption    = caption
+        self.title      = title
+        self.cryptKeys  = '576861747341707020446f63756d656e74204b657973'
 
-    def getCaption(self):
-        return self.caption
+    def getTitle(self):
+        return self.title
 
     def toProtocolTreeNode(self):
-        node = super(ImageDownloadableMediaMessageProtocolEntity, self).toProtocolTreeNode()
+        node = super(DocumentDownloadableMediaMessageProtocolEntity, self).toProtocolTreeNode()
         mediaNode = node.getChild("media")
 
-        mediaNode.setAttribute("encoding",  self.encoding)
+        mediaNode.setAttribute("title",  self.title)
         mediaNode.setAttribute("pages",     str(self.pages))
-        if self.caption:
-            mediaNode.setAttribute("caption", self.caption)
 
         return node
 
     def toProtobufMessage(self):
         document_message = DocumentMessage()
         document_message.url = self.url
-        document_message.page_coubt = self.pages
+        document_message.width = self.width
+        document_message.height = self.height
         document_message.mime_type = self.mimeType
         document_message.file_sha256 = self.fileHash
         document_message.file_length = self.size
@@ -73,7 +67,7 @@ class DocumentDownloadableMediaMessageProtocolEntity(DownloadableMediaMessagePro
         document_message.jpeg_thumbnail = self.preview
         document_message.media_key = self.mediaKey
 
-        return document_message
+        return image_message
 
     @staticmethod
     def fromProtocolTreeNode(node):
@@ -81,37 +75,7 @@ class DocumentDownloadableMediaMessageProtocolEntity(DownloadableMediaMessagePro
         entity.__class__ = DocumentDownloadableMediaMessageProtocolEntity
         mediaNode = node.getChild("media")
         entity.setDocumentProps(
-            mediaNode.getAttributeValue("encoding"),
-            mediaNode.getAttributeValue("pages"),
             mediaNode.getAttributeValue("caption"),
+            mediaNode.getAttributeValue("pages"),
         )
         return entity
-
-
-    @staticmethod
-    def getBuilder(jid, filepath):
-        return DownloadableMediaMessageBuilder(DocumentDownloadableMediaMessageProtocolEntity, jid, filepath)
-
-    @staticmethod
-    def fromBuilder(builder):
-        builder.getOrSet("preview", lambda: ImageTools.generatePreviewFromImage(builder.getOriginalFilepath()))
-        filepath = builder.getFilepath()
-        caption = builder.get("caption")
-        dimensions = builder.get("dimensions",  ImageTools.getImageDimensions(builder.getOriginalFilepath()))
-        assert dimensions, "Could not determine image dimensions"
-        width, height = dimensions
-
-        entity = DownloadableMediaMessageProtocolEntity.fromBuilder(builder)
-        entity.__class__ = builder.cls
-        entity.setImageProps("raw", width, height, caption)
-        return entity
-
-    @staticmethod
-    def fromFilePath(path, url, ip, to, mimeType = None, caption = None, dimensions = None):
-        builder = ImageDownloadableMediaMessageProtocolEntity.getBuilder(to, path)
-        builder.set("url", url)
-        builder.set("ip", ip)
-        builder.set("caption", caption)
-        builder.set("mimetype", mimeType)
-        builder.set("dimensions", dimensions)
-        return DocumentDownloadableMediaMessageProtocolEntity.fromBuilder(builder)
