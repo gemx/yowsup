@@ -226,7 +226,7 @@ class AxolotlReceivelayer(AxolotlBaseLayer):
         self.toUpper(messageNode)
 
     def handleDocumentMessage(self, originalEncNode, documentMessage):
-        print documentMessage
+        #print documentMessage
         messageNode=copy.deepcopy(originalEncNode)
         messageNode["type"] = "media"
         mediaNode = ProtocolTreeNode("media", {
@@ -268,7 +268,7 @@ class AxolotlReceivelayer(AxolotlBaseLayer):
         self.toUpper(messageNode)
 
     def handleAudioMessage(self, originalEncNode, audioMessage):
-        print audioMessage
+        #print audioMessage
         messageNode = copy.deepcopy(originalEncNode)
         messageNode["type"] = "media"
         mediaNode = ProtocolTreeNode("media", {
@@ -290,7 +290,7 @@ class AxolotlReceivelayer(AxolotlBaseLayer):
         self.toUpper(messageNode)
 
     def handleVideoMessage(self, originalEncNode, videoMessage):
-        print videoMessage
+        #print videoMessage
         messageNode = copy.deepcopy(originalEncNode)
         messageNode["type"] = "media"
         mediaNode = ProtocolTreeNode("media", {
