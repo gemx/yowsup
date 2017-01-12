@@ -497,6 +497,7 @@ class YowsupCliLayer(Cli, YowInterfaceLayer):
             #self.output(message.getBody(), tag = "%s [%s]"%(message.getFrom(), formattedDate))
             messageOut = self.getTextMessageBody(message)
         elif message.getType() == "media":
+            print message
             messageOut = self.getMediaMessageBody(message)
         else:
             messageOut = "Unknown message type %s " % message.getType()
@@ -522,14 +523,26 @@ class YowsupCliLayer(Cli, YowInterfaceLayer):
         return message.getBody()
 
     def getMediaMessageBody(self, message):
-        if message.getMediaType() in ("image", "audio", "video"):
+        if message.getMediaType() in ("image", "audio", "video","document"):
             return self.getDownloadableMediaMessageBody(message)
         else:
             return "[Media Type: %s]" % message.getMediaType()
 
 
     def getDownloadableMediaMessageBody(self, message):
-         return "[Media Type:{media_type}, Size:{media_size}, URL:{media_url}]".format(
+        fname=message.getId()
+        if message.getMediaType()=="image":
+            fname=fname+".jpg"
+        elif message.getMediaType()=="audio":
+            fname=fname+".mp3"
+        elif message.getMediaType()=="video":
+            fname=fname+".mp4"
+        elif message.getMediaType()=="document":
+            fname=message.getTitle()
+        filename = "%s/%s"%("c:/tmp",fname)
+        with open(filename, 'wb') as f:
+            f.write(message.getMediaContent())        
+        return "[Media Type:{media_type}, Size:{media_size}, URL:{media_url}]".format(
             media_type = message.getMediaType(),
             media_size = message.getMediaSize(),
             media_url = message.getMediaUrl()
@@ -578,7 +591,7 @@ class YowsupCliLayer(Cli, YowInterfaceLayer):
         # or open
         # or do nothing
         # write to file example:
-        #resultGetPictureIqProtocolEntiy.writeToFile("/tmp/yowpics/%s_%s.jpg" % (getPictureIqProtocolEntity.getTo(), "preview" if resultGetPictureIqProtocolEntiy.isPreview() else "full"))
+        resultGetPictureIqProtocolEntiy.writeToFile("c:/tmp/yowpics/%s_%s.jpg" % (getPictureIqProtocolEntity.getTo(), "preview" if resultGetPictureIqProtocolEntiy.isPreview() else "full"))
         pass
 
     def __str__(self):
