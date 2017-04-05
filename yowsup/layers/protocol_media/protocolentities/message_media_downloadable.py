@@ -96,6 +96,7 @@ class DownloadableMediaMessageProtocolEntity(MediaMessageProtocolEntity):
         return cr_obj.decrypt(e_img)
 
     def getMediaContent(self):
+        print "Downloading medi from url %s" % self.url
         data = urlopen(self.url).read()
         if self.isEncrypted():
             data = self.decrypt(data, self.mediaKey)
